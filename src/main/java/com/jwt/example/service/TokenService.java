@@ -1,60 +1,50 @@
 package com.jwt.example.service;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTCreationException;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.interfaces.DecodedJWT;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
-import java.io.UnsupportedEncodingException;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Service
 public class TokenService {
 
-    public static final String TOKEN_SECRET = "s4T2zOIWHMM1sxq";
+    public static final String SECRET_KEY = "MY_SECRET_KEY_1234556789_SHOULD_BE_LONG_ENOUGH";
+    private static final long EXPIRATION_TIME = 3600000; // 1 hour in milliseconds
 
     public String createToken(ObjectId userId) {
-        try {
-            Algorithm algorithm = Algorithm.HMAC256(TOKEN_SECRET);
-            String token = JWT.create()
-                    .withClaim("userId", userId.toString())
-                    .withClaim("createdAt", new Date())
-                    .sign(algorithm);
-            return token;
-        } catch (UnsupportedEncodingException exception) {
-            exception.printStackTrace();
-            //log WRONG Encoding message
-        } catch (JWTCreationException exception) {
-            exception.printStackTrace();
-            //log Token Signing Failed
-        }
-        return null;
+        return Jwts.builder()
+                .claim("userId", userId.toHexString())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(getSigningKey())
+                .compact();
     }
 
     public String getUserIdFromToken(String token) {
-        try {
-            Algorithm algorithm = Algorithm.HMAC256(TOKEN_SECRET);
-            JWTVerifier verifier = JWT.require(algorithm)
-                    .build();
-            DecodedJWT jwt = verifier.verify(token);
-            return jwt.getClaim("userId").asString();
-        } catch (UnsupportedEncodingException exception) {
-            exception.printStackTrace();
-            //log WRONG Encoding message
-            return null;
-        } catch (JWTVerificationException exception) {
-            exception.printStackTrace();
-            //log Token Verification Failed
-            return null;
-        }
+        return (String) extractClaims(token).getPayload().get("userId");
     }
 
     public boolean isTokenValid(String token) {
         String userId = this.getUserIdFromToken(token);
-        return userId != null;
+        return userId != null && !isTokenExpired(token);
     }
+
+    private boolean isTokenExpired(String token) {
+        return extractClaims(token).getPayload().getExpiration().before(new Date());
+    }
+
+    private Jws<Claims> extractClaims(String token) {
+        return Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token);
+    }
+
+    private SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+    }
+
 }

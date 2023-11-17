@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService {
 
-    private UserRepository userRepository;
-    private TokenService tokenService;
+    private final UserRepository userRepository;
+    private final TokenService tokenService;
 
     @Autowired
     UserService(UserRepository userRepository, TokenService tokenService) {
@@ -19,7 +19,7 @@ public class UserService {
     }
 
     public User getUser(ObjectId userId) {
-        return userRepository.findOne(userId);
+        return userRepository.findById(userId).orElse(null);
     }
 
     public String saveUser(User user) {

@@ -2,7 +2,6 @@ package com.jwt.example.controller;
 
 import com.jwt.example.model.User;
 import com.jwt.example.service.UserService;
-import org.apache.catalina.servlet4preview.http.HttpServletRequest;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/user")
 public class UserController {
 
-    private UserService userService;
+    private final UserService userService;
 
     @Autowired
     UserController(UserService userService) {
@@ -19,13 +18,12 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public String regiterUser(@RequestBody User user) {
+    public String registerUser(@RequestBody User user) {
         return userService.saveUser(user);
     }
 
     @GetMapping("/get")
-    public User getUser(HttpServletRequest request) {
-        ObjectId userId = (ObjectId) request.getAttribute("userId");
+    public User getUser(@RequestAttribute(value = "userId") ObjectId userId) {
         return userService.getUser(userId);
     }
 

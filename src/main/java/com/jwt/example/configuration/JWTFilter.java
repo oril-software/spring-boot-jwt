@@ -2,7 +2,6 @@ package com.jwt.example.configuration;
 
 import com.jwt.example.service.TokenService;
 import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.filter.GenericFilterBean;
 
@@ -17,7 +16,7 @@ import java.io.IOException;
 @Configuration
 public class JWTFilter extends GenericFilterBean {
 
-    private TokenService tokenService;
+    private final TokenService tokenService;
 
     JWTFilter() {
         this.tokenService = new TokenService();
@@ -47,14 +46,10 @@ public class JWTFilter extends GenericFilterBean {
 
             }
         }
-
     }
 
     public boolean allowRequestWithoutToken(HttpServletRequest request) {
-        System.out.println(request.getRequestURI());
-        if (request.getRequestURI().contains("/register")) {
-            return true;
-        }
-        return false;
+        return request.getRequestURI().contains("/register");
     }
+
 }
